@@ -6,7 +6,7 @@ import { catchError, map, tap } from 'rxjs/operators';
 
 import { Hero } from './hero';
 import { MessageService } from './message.service';
-import { HEROES } from './mock-heroes';
+
 
 @Injectable({
   providedIn: 'root'
@@ -21,6 +21,8 @@ export class HeroService {
 
   constructor(private http: HttpClient,
     private messageService: MessageService) { }
+
+
 
   /** GET heroes from the server */
   getHeroes(): Observable<Hero[]> {
@@ -52,34 +54,37 @@ export class HeroService {
   /** PUT: update the hero on the server */
   updateHero(hero: Hero): Observable<any> {
     let payload = JSON.stringify(hero);
-    return this.http.put<any>(this.heroesUrl + "hero_put.php",
-    payload ).pipe(
+    return this.http.post<any>(this.heroesUrl + "hero_put.php",
+      payload).pipe(
         tap(aux => {
           console.log(aux);
           this.log(`updated hero id=${hero.id}`);
         }),
-        catchError((x,y)=>{
-          return this.handleError<any>('updateHero')})
+        catchError(this.handleError<Hero>('updateHero')
+        )
       );
   }
 
   /** POST: add a new hero to the server */
   addHero(hero: Hero): Observable<Hero> {
-    return this.http.post<Hero>(this.heroesUrl + "hero_post.php", hero, this.httpOptions).pipe(
-      tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
-      catchError(this.handleError<Hero>('addHero'))
-    );
+    let payload = JSON.stringify(hero);
+    return this.http.post<Hero>
+      (this.heroesUrl + "hero_post.php",
+        payload).pipe(
+          tap((newHero: Hero) => this.log(`added hero w/ id=${newHero.id}`)),
+          catchError(this.handleError<any>('addHero'))
+        );
   }
 
 
   /** DELETE: delete the hero from the server */
   deleteHero(hero: Hero | number): Observable<Hero> {
     const id = typeof hero === 'number' ? hero : hero.id;
-    const url = `${this.heroesUrl}/${id}`;
+    const url = `${this.heroesUrl}hero_delete.php?${id}`;
 
     return this.http.delete<Hero>(url, this.httpOptions).pipe(
       tap(_ => this.log(`deleted hero id=${id}`)),
-      catchError(this.handleError<Hero>('deleteHero'))
+      catchError(this.handleError<any>('deleteHero'))
     );
   }
 
@@ -97,6 +102,19 @@ export class HeroService {
       catchError(this.handleError<Hero[]>('searchHeroes', []))
     );
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   /**
    * Handle Http operation that failed.
